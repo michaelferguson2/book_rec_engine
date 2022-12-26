@@ -1,11 +1,20 @@
 import numpy as np
 import pandas as pd
 import os
+import streamlit as st
+
+st.set_page_config(layout="wide", 
+                   page_title="My Next Book",
+                   page_icon=":blue-book:")
 
 path = os.getcwd()
 
-book_data = pd.read_pickle(path+r"\data\best_books_20221222.pkl")
+book_data = pd.read_pickle(path+r"\data\best_books_working.pkl")
+#book_data.drop_duplicates(subset=['title'], inplace=True)
+#book_data.reset_index(inplace=True, drop=True)
+
 cosine_sim = np.load(path+'\data\cosine_sim.npy')
+
 indices = pd.Series(book_data.index,index=book_data['title']).drop_duplicates()
 
 def desc_sim(title, sim_matrix):
@@ -91,9 +100,58 @@ def rec_table(eng_output):
     return dataframe
 
 
-rec_values = book_engine('Green Eggs and Ham', cosine_sim, 4)
-rec_df = rec_table(rec_values)
-print(rec_df[['title','author']])
+def include_author(table, include):
+    
+    if include == True:
+        val = table.iloc[1:] 
+        val.reset_index(inplace=True, drop=True)
+    elif include == False:
+        val = table.loc[table['author'] != table['author'][0]]
+        val.reset_index(inplace=True, drop=True)
+    
+    return val
+
+
+
+st.sidebar.title('My Next Book Is')
+col1, col2 = st.columns([3, 1], gap="medium")
+
+
+selection = st.sidebar.selectbox("I Want Something Like...", 
+                                 book_data['title'],
+                                 index=2)
+
+by_author_text = book_data['author'][book_data['title'] == selection].iloc[0]
+st.sidebar.text("by {}".format(by_author_text))
+
+num_input = st.sidebar.number_input('Force Genre Overlap', 
+                                    min_value=1,
+                                    max_value=5,
+                                    value=3)
+
+rec_values = book_engine(selection, cosine_sim, num_input)
+rec_df_0 = rec_table(rec_values)
+#rec_df_0.reset_index(inplace=True, drop=True)
+
+
+
+include_author_text = "Include Author in Suggestions?"
+include_author_bool = st.sidebar.checkbox(include_author_text, value=False)
+rec_df = include_author(rec_df_0, include_author_bool)
+rec_df.reset_index(inplace=True, drop=True)
+
+#rec_table(book_engine('Jane Eyre', cosine_sim, 1)).iloc[0:10]
+
+
+
+# column1
+col1.header("Your top recommendation is:")
+col1.subheader("{} by {}".format(rec_df['title'][0], rec_df['author'][0]))
+col1.markdown(rec_df["desc"].iloc[0].replace("#","\n"))
+col1.subheader("Other Suggestions")
+col1.dataframe(rec_df[['title', 'author','genre', 'rating']])
+
+col2.image(rec_df["cover link"].iloc[0])
 
 
 
@@ -101,24 +159,7 @@ print(rec_df[['title','author']])
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#streamlit run streamlit_testing.py
 
 
 

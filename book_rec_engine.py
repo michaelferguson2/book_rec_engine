@@ -7,13 +7,20 @@ st.set_page_config(layout="wide",
                    page_title="My Next Book",
                    page_icon=":blue-book:")
 
-path = os.getcwd()
+#path = os.getcwd()
 
-book_data = pd.read_pickle(path+r"\data\best_books_working.pkl")
+
+book_data = pd.read_pickle("./data/best_books_working.pkl")
+
+
+#book_data = pd.read_pickle(path+r"\data\best_books_working.pkl")
 #book_data.drop_duplicates(subset=['title'], inplace=True)
 #book_data.reset_index(inplace=True, drop=True)
 
-cosine_sim = np.load(path+'\data\cosine_sim.npy')
+#cosine_sim = np.load(path+'\data\cosine_sim.npy')
+
+cosine_sim = np.load('./data/cosine_sim.npy')
+
 
 indices = pd.Series(book_data.index,index=book_data['title']).drop_duplicates()
 

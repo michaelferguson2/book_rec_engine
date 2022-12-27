@@ -1,24 +1,12 @@
 import numpy as np
 import pandas as pd
-import os
 import streamlit as st
 
 st.set_page_config(layout="wide", 
                    page_title="My Next Book",
                    page_icon=":blue-book:")
 
-#path = os.getcwd()
-
-
 book_data = pd.read_pickle("./data/best_books_working.pkl")
-
-
-#book_data = pd.read_pickle(path+r"\data\best_books_working.pkl")
-#book_data.drop_duplicates(subset=['title'], inplace=True)
-#book_data.reset_index(inplace=True, drop=True)
-
-#cosine_sim = np.load(path+'\data\cosine_sim.npy')
-
 cosine_sim = np.load('./data/cosine_sim.npy')
 
 
@@ -119,7 +107,6 @@ def include_author(table, include):
     return val
 
 
-
 st.sidebar.title('My Next Book Is')
 col1, col2 = st.columns([3, 1], gap="medium")
 
@@ -138,8 +125,6 @@ num_input = st.sidebar.number_input('Force Genre Overlap',
 
 rec_values = book_engine(selection, cosine_sim, num_input)
 rec_df_0 = rec_table(rec_values)
-#rec_df_0.reset_index(inplace=True, drop=True)
-
 
 
 include_author_text = "Include Author in Suggestions?"
@@ -147,11 +132,7 @@ include_author_bool = st.sidebar.checkbox(include_author_text, value=False)
 rec_df = include_author(rec_df_0, include_author_bool)
 rec_df.reset_index(inplace=True, drop=True)
 
-#rec_table(book_engine('Jane Eyre', cosine_sim, 1)).iloc[0:10]
 
-
-
-# column1
 col1.header("Your top recommendation is:")
 col1.subheader("{} by {}".format(rec_df['title'][0], rec_df['author'][0]))
 col1.markdown(rec_df["desc"].iloc[0].replace("#","\n"))
@@ -166,7 +147,7 @@ col2.image(rec_df["cover link"].iloc[0])
 
 
 
-#streamlit run streamlit_testing.py
+#streamlit run book_rec_engine.py
 
 
 

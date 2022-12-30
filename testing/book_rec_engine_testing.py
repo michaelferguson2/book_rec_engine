@@ -6,8 +6,8 @@ st.set_page_config(layout="wide",
                    page_title="My Next Book",
                    page_icon=":blue-book:")
 
-book_data = pd.read_pickle("./data/best_books_working.pkl")
-cosine_sim = np.load('./data/cosine_sim.npy')
+book_data = pd.read_pickle("./data/best_books_working_20221229.pkl")
+cosine_sim = np.load('./data/cosine_sim_20221229.npy')
 indices = pd.Series(book_data.index,index=book_data['title']).drop_duplicates()
 
 def desc_sim(title, sim_matrix):
@@ -74,6 +74,11 @@ def book_engine(title, sim_matrix, num):
     
     return final_recs
 
+#rec_table(book_engine("Pride and Prejudice", cosine_sim, 8))
+
+
+
+
 
 def rec_table(eng_output):
     """Takes engine output and creates full dataframe
@@ -118,10 +123,10 @@ def include_author(suggestion, table, include):
 
 
 
-def limit_by_genre(table, genre=['All']):
+def limit_by_genre(table, genre=None):
     table.reset_index(inplace=True, drop=True)
     keep = []
-    if len(genre) == 1 and genre[0] == 'All':
+    if genre == None:
         val = table 
         val.reset_index(inplace=True, drop=True)
     elif len(genre) == 1 and genre[0] != 'All':
@@ -154,9 +159,10 @@ selection = st.sidebar.selectbox("I Want Something Like...",
 by_author_text = book_data['author'][book_data['title'] == selection].iloc[0]
 st.sidebar.text("by {}".format(by_author_text))
 
-num_input = st.sidebar.number_input('Force Genre Overlap', 
+num_input_text = 'Amount of Genre Overlap between Input and Recommendations'
+num_input = st.sidebar.number_input(num_input_text, 
                                     min_value=1,
-                                    max_value=5,
+                                    max_value=10,
                                     value=3)
 # book engine output 
 book_engine_output = book_engine(selection, cosine_sim, num_input)
@@ -164,14 +170,13 @@ rec_suggestion, rec_df_0 = rec_table(book_engine_output)
 
 
 # genre reduction section
-genre_list = ['All', 'Science Fiction', 'Dystopia', 'Fantasy',
+genre_list = ['Science Fiction', 'Dystopia', 'Fantasy',
               'Romance', 'Adventure', 'Young Adult','Historical',
               'Classics','Horror', 'Mystery']
-select_genres = st.sidebar.multiselect('multi', genre_list, default='All')
+select_genres = st.sidebar.multiselect('Limit Suggestions by Genre', 
+                                       genre_list, 
+                                       default=None)
 rec_df_1 = limit_by_genre(rec_df_0, select_genres) 
-
-
-
 
 
 # include rec book author section
@@ -179,6 +184,9 @@ include_author_text = "Include Author in Suggestions?"
 include_author_bool = st.sidebar.checkbox(include_author_text, value=False)
 rec_df = include_author(rec_suggestion, rec_df_1, include_author_bool)
 rec_df.reset_index(inplace=True, drop=True)
+
+st.sidebar.text('below are genres associated \nwith your suggestion')
+st.sidebar.text(rec_suggestion['genre'])
 
 
 col1.header("Your top recommendation is:")

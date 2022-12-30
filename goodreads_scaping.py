@@ -158,7 +158,7 @@ driver = Chrome(service=s)
 path = os.getcwd()
 books_list = pd.read_csv(path+r"\data\books_links.csv")
 books_list = books_list['0']
-books_list_1000 = books_list[0:10]
+books_list_rest = books_list[1000:]
 
 
 title=[]
@@ -171,7 +171,7 @@ page_count = []
 publish_date = []
 unique_id = []
 
-for i in books_list_1000:
+for i in books_list_rest:
     soup_test = get_soup_wd(i)
     
     title.append(get_title_wd(soup_test))
@@ -187,23 +187,28 @@ for i in books_list_1000:
      
 books_df = pd.DataFrame({
     'author':author,
-    'title':title,
+    'title':title2,
     'desc':desc,
     'genre':genres,
     'cover link':cover_link,
     'rating':rating,
     'page count':page_count,
     'publish date':publish_date,
-    'book link':books_list_1000,
+    'book link':books_list_rest_links,
     'unique_id':unique_id})
+
+
+title2 = title[0:1442]
+books_list_rest_links= books_list_rest[0:1442]
+
 
 
 
 timestamp = str(datetime.datetime.now())[0:19]
 output_title = "{} {}".format("book_data", timestamp)
 
-books_df.to_csv(r"{}{}".format(output_title, ".csv"), index=False)
-books_df.to_pickle("{}{}{}".format("./", output_title, ".pkl")) 
+books_df.to_csv("./data/best_books_20221229.csv")
+books_df.to_pickle("./best_books_20221229.pkl")
 
 books_df.to_csv('test')
 

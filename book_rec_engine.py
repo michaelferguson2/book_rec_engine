@@ -242,8 +242,7 @@ col1.markdown(genre_list_text)
 
 # dataframe
 col1.subheader("Other Recommendations:")
-col1.dataframe(rec_df[['title', 'author','genre', 'desc']].iloc[1:],
-               width=15)
+col1.dataframe(rec_df[['title', 'author','genre', 'desc']].iloc[1:])
 
 # image display
 col2.image(rec_df["cover link"].iloc[0])

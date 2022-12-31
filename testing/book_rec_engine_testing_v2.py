@@ -33,7 +33,12 @@ def desc_sim(title, sim_matrix):
     frame = {'index':book_indices, 
              'title':book_data['title'].iloc[book_indices]}
     
-    return pd.DataFrame(frame)
+    dataframe = pd.DataFrame(frame)
+    
+    title_input = dataframe.iloc[0]
+    results = dataframe.iloc[1:]
+    
+    return title_input, results
 
 
 
@@ -45,18 +50,15 @@ def desc_sim(title, sim_matrix):
 
 
 
-def grene_overlap(a, b, num):
+def genre_overlap(a, b, num):
     """Counts the number of overlap between two lists and returns True if 
     the number of overlap is higher than the minimum set
     Args:
-        a (list or array): First comparison list
-        b (list or array): Second comparison list
-        num (int): the minimum amout of overlap between the lists to return a 
-        True value    
+        a and b (list or array): First comparison list
+        num (int): the min overlap between a and b to return True   
     Retrns:
         bool: 
-    """    
-    
+    """       
     if len(set(a) & set(b)) > num:
         return True
     else:
@@ -70,7 +72,7 @@ def reduce_by_genre(recs, num):
     recs_index = []
     
     for i in range(len(recs)):
-        if grene_overlap(book_data['genre'][recs.index[0]], 
+        if genre_overlap(book_data['genre'][recs.index[0]], 
                          book_data['genre'][recs.index[i]], num) == True:
             reduced_recs.append(book_data['title'][recs.index[i]])
             recs_index.append(recs.index[i])
@@ -80,18 +82,26 @@ def reduce_by_genre(recs, num):
 
 
 
+
+
+
+
+
+
 def rec_table(eng_output, split=True):
     """Takes engine output and creates full dataframe
     """
     
+    output_index = eng_output.index
+    
     frame = {
-        'title':[book_data['title'][i] for i in eng_output['index']],
-        'author':[book_data['author'][i] for i in eng_output['index']],
-        'desc':[book_data['desc'][i] for i in eng_output['index']],
-        'genre':[book_data['genre'][i] for i in eng_output['index']],
-        'rating':[book_data['rating'][i] for i in eng_output['index']],
-        'cover link':[book_data['cover link'][i] for i in eng_output['index']],
-        'book link':[book_data['book link'][i] for i in eng_output['index']]}
+        'title':[book_data['title'][i] for i in output_index['index']],
+        'author':[book_data['author'][i] for i in output_index['index']],
+        'desc':[book_data['desc'][i] for i in output_index['index']],
+        'genre':[book_data['genre'][i] for i in output_index['index']],
+        'rating':[book_data['rating'][i] for i in output_index['index']],
+        'cover link':[book_data['cover link'][i] for i in output_index['index']],
+        'book link':[book_data['book link'][i] for i in output_index['index']]}
 
     dataframe = pd.DataFrame(frame)
     
@@ -152,6 +162,74 @@ def check_output_na(table):
 
 
 
+rec_table(dest_output_test)
+
+
+
+#dest_output_test = desc_sim("Pride and Prejudice", cosine_sim)
+
+
+rec_suggestion_test, rec_df_0_test = desc_sim("Pride and Prejudice", cosine_sim)
+
+
+rec_table(rec_suggestion_test)
+
+
+
+limit_output_test = limit_by_genre(rec_df_0_test, None)
+
+
+
+
+
+
+reduce_output_test = reduce_by_genre(limit_output_test, 1)
+rec_df_2_test = rec_table(reduce_output_test, split=False)
+
+
+
+
+
+def reduce_by_genre2(suggestion, recs, num):
+    """
+    """
+    reduced_recs = []
+    recs_index = []
+    
+    for i in range(len(recs)):
+        if genre_overlap(suggestion['genre'], 
+                         recs['genre'], num) == True:
+            reduced_recs.append(book_data['title'][recs.index[i]])
+            recs_index.append(recs.index[i])
+    recs_df = pd.DataFrame({'index':recs_index, 'title':reduced_recs})
+    
+    return recs_df
+
+
+rec_suggestion_test['genre']
+
+reduce_by_genre2(rec_suggestion_test, rec_df_0_test, 1)
+
+
+
+
+genre_overlap(rec_suggestion_test['genre'],
+              book_data['genre'][recs.index[i]], num) == True
+
+
+
+book_data['genre'][recs.index[i]]
+
+
+
+
+
+
+
+
+
+
+
 st.sidebar.title('My Next Book Is')
 col1, col2 = st.columns([3, 1], gap="medium")
 
@@ -166,8 +244,8 @@ st.sidebar.text("by {}".format(by_author_text))
 
 
 # desc engine output 
-desc_output = desc_sim(selection, cosine_sim)
-rec_suggestion, rec_df_0 = rec_table(desc_output)
+user_suggestion, recs0 = desc_output = desc_sim(selection, cosine_sim)
+######rec_suggestion, rec_df_0 = rec_table(desc_output)
 
 
 # genre reduction section
@@ -193,7 +271,7 @@ rec_df_2 = rec_table(reduce_output, split=False)
 # include rec book author section
 include_author_text = "Include Author in Suggestions?"
 include_author_bool = st.sidebar.checkbox(include_author_text, value=False)
-rec_df = include_author(rec_suggestion, rec_df_2, include_author_bool)
+rec_df = include_author(user_suggestion, rec_df_2, include_author_bool)
 rec_df.reset_index(inplace=True, drop=True)
 
 
@@ -207,7 +285,7 @@ rec_df = check_output_na(rec_df)
 
 
 st.sidebar.text('below are genres associated \nwith your suggestion')
-st.sidebar.text(rec_suggestion['genre'])
+st.sidebar.text(user_suggestion['genre'])
 
 
 col1.header("Your top recommendation is:")
@@ -231,7 +309,7 @@ col2.image(rec_df["cover link"].iloc[0])
 
 
 
-
+#streamlit run book_rec_engine_testing_v3.py
 
 
 

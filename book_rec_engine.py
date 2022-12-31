@@ -10,6 +10,8 @@ book_data = pd.read_pickle("./data/best_books_working_20221229.pkl")
 cosine_sim = np.load('./data/cosine_sim_20221229.npy')
 indices = pd.Series(book_data.index,index=book_data['title']).drop_duplicates()
 
+book_data['desc'] = book_data['desc'].str.replace("#","\n",regex=False)
+
 def desc_sim(title, sim_matrix):
     """Returns a list of book recs based on a given title based on the 
     similarity matrix
@@ -29,24 +31,19 @@ def desc_sim(title, sim_matrix):
     sim_scores3 = sim_scores2[0:15]
     
     book_indices = [i[0] for i in sim_scores3]
-    
     frame = {'recs index':book_indices, 
              'title':book_data['title'].iloc[book_indices]}
     
     dataframe = pd.DataFrame(frame)
-    
     #title_input = dataframe.iloc[0]
     #results = dataframe.iloc[1:]
-    
     return dataframe
 
 
 def rec_table(eng_output, split=True):
     """Takes engine output and creates full dataframe
     """
-    
     output_index = eng_output['recs index']
-    
     frame = {
         'title':[book_data['title'][i] for i in output_index],
         'author':[book_data['author'][i] for i in output_index],
@@ -56,7 +53,6 @@ def rec_table(eng_output, split=True):
         'cover link':[book_data['cover link'][i] for i in output_index],
         'book link':[book_data['book link'][i] for i in output_index],
         'recs index':output_index}
-
     dataframe = pd.DataFrame(frame)
     
     if split == True:
@@ -68,15 +64,7 @@ def rec_table(eng_output, split=True):
         return dataframe
 
 
-def genre_overlap(a, b, num):
-    """Counts the number of overlap between two lists and returns True if 
-    the number of overlap is higher than the minimum set
-    Args:
-        a and b (list or array): First comparison list
-        num (int): the min overlap between a and b to return True   
-    Retrns:
-        bool: 
-    """       
+def genre_overlap(a, b, num):      
     if len(set(a) & set(b)) > num:
         return True
     else:
@@ -84,7 +72,6 @@ def genre_overlap(a, b, num):
 
 
 def overlap_by_genre(user_input, recs, num):
-    
     indexes = []
     titles = []
     for i in range(len(recs['recs index'])):
@@ -108,8 +95,7 @@ def limit_by_genre(table, genre=None):
     keep = []
     val = 0
     if genre == None:
-        val = table 
-        
+        val = table     
     elif len(genre) == 1 and genre[0] != 'All':
         for i in range(len(table['genre'])):
             if (genre[0] in table['genre'][i]) == True:
@@ -125,14 +111,10 @@ def limit_by_genre(table, genre=None):
 
 
 def include_author(suggestion, table, include):
-    
     if include == True:
         val = table
-        #val.reset_index(inplace=True, drop=True)
     elif include == False:
         val = table.loc[table['author'] != suggestion['author']]
-        #val.reset_index(inplace=True, drop=True)
-    
     return val
 
 
@@ -190,67 +172,78 @@ def list_to_text(genre_list, sep=' ', keep_dup=False):
 #creating the layout
 ##############################################################################
 
-##################### sidebar########################################
+#sidebar######################################################################
 st.sidebar.title('My Next Book Is')
 
 # user title input 
-user_input = st.sidebar.selectbox("I Want Something Like...", 
+user_input = st.sidebar.selectbox("Something Like...", 
                                  book_data['title'],
                                  index=2)
 
 by_author_text = book_data['author'][book_data['title'] == user_input].iloc[0]
 st.sidebar.markdown("by {}".format(by_author_text))
 
+
 # limit by specific genres
-genre_list = ['Science Fiction', 'Dystopia', 'Fantasy',
-              'Romance', 'Adventure', 'Young Adult','Historical',
-              'Classics','Horror', 'Mystery']
-limit_genre = st.sidebar.multiselect('Limit Suggestions by Genre', 
+genre_list = ['Adventure','Childrens','Classics','Dystopia','Fantasy',
+              'Historical','Horror','Mystery','Paranormal','Romance',
+              'Science Fiction','Thriller','Young Adult']
+limit_genre = st.sidebar.multiselect('Only Include the Below Genres?', 
                                        genre_list, 
                                        default=None)
 
 # number of overlap
-num_input_text = 'Amount of Genre Overlap between Input and Recommendations'
+num_input_text = '''How Much Required Genre Overlap Between Your Input and 
+Our Recommendations?'''
 num_input = st.sidebar.slider(num_input_text, 
                               min_value=0, 
                               max_value=10, 
-                              value=1)
+                              value=5)
+
+# caption on genre overlap
+st.sidebar.caption('''Warning: genre overlap below 3 or above 7 may result
+result in major inaccuracies''')
 
 # include author in recs
-author_text = "Include Author in Suggestions?"
+author_text = '''Include other books by *{}* in Possible Recommendations?
+'''.format(by_author_text)
 author_bool = st.sidebar.checkbox(author_text, value=False)
 
 # book engine call
 user_input, rec_df = book_rec_engine(user_input, limit_genre, 
                                      num_input, author_bool)
-
-rec_df.reset_index(inplace=True, drop=True) # at this point index doesn't matter and is needed for book/authror info 
+rec_df.reset_index(inplace=True, drop=True) # needed for author/title display
 
 # checking if final results are NA
 rec_df = check_output_na(rec_df)
 
+# side bar genre for user input 
+st.sidebar.markdown('''#### {} is Listed Under the Following Genres: 
+'''.format(user_input['title']))
+genre_list_text_user = list_to_text(user_input["genre"], 
+                               sep=', ', keep_dup=False)
+st.sidebar.markdown(genre_list_text_user)
 
 
-#########################columns###########################
+#columns#####################################################################
 col1, col2 = st.columns([3, 1], gap="medium")
 
 # rec display info
 col1.header("Your Top Recommendation:")
 col1.subheader("{} by {}".format(rec_df['title'][0], rec_df['author'][0]))
-col1.markdown(rec_df["desc"].iloc[0].replace("#","\n"))
-
+#col1.markdown(rec_df["desc"].iloc[0].replace("#","\n"))
+col1.markdown(rec_df["desc"].iloc[0])
 
 # display top rec genres 
 genre_list_text = list_to_text(rec_df["genre"].iloc[0], 
                                sep=', ', keep_dup=False)
-col1.markdown('##### Your Recommendation is Under the Following Genres:')
+col1.markdown('##### Your Top Recommendation is Under the Following Genres:')
 col1.markdown(genre_list_text)
 
-
 # dataframe
-col1.subheader("Other Recommendations")
-col1.dataframe(rec_df[['title', 'author','genre', 'rating']].iloc[1:])
-
+col1.subheader("Other Recommendations:")
+col1.dataframe(rec_df[['title', 'author','genre', 'desc']].iloc[1:],
+               width=15)
 
 # image display
 col2.image(rec_df["cover link"].iloc[0])
@@ -259,8 +252,3 @@ col2.image(rec_df["cover link"].iloc[0])
 
 
 # streamlit run book_rec_engine.py 
-
-
-
-
-

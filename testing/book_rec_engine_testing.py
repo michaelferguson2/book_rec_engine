@@ -204,11 +204,6 @@ col2.image(rec_df["cover link"].iloc[0])
 
 
 #streamlit run book_rec_engine_testing.py
-
-
-
-
-
 #testS, testDF = rec_table(book_engine("To Kill a Mockingbird", cosine_sim, 1))
 #limit_by_genre(testDF, 'All') 
 

@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(layout="wide", 
-                   page_title="My Next Book",
+                   page_title="My Next Book Is",
                    page_icon=":blue-book:")
 
 book_data = pd.read_pickle("./data/best_books_working_20221229.pkl")
@@ -64,30 +64,29 @@ def rec_table(eng_output, split=True):
         return dataframe
 
 
-def genre_overlap(a, b, num):      
+def list_overlap(a, b, num):      
     if len(set(a) & set(b)) > num:
         return True
     else:
         return False
 
 
-def overlap_by_genre(user_input, recs, num):
+def overlap_by_genre(user_input, rec_table, num):
     indexes = []
     titles = []
-    for i in range(len(recs['recs index'])):
-        if genre_overlap(user_input['genre'], 
-                         recs['genre'].iloc[i], num) == True:
-            idx = recs['recs index'].iloc[i]
-            title = recs['title'].iloc[i] 
-            indexes.append(idx)
-            titles.append(title)
+    for i in range(len(rec_table['recs index'])):
+        if list_overlap(user_input['genre'], 
+                        rec_table['genre'].iloc[i], num) == True:
+            indexes.append(rec_table['recs index'].iloc[i])
+            titles.append(rec_table['title'].iloc[i])
     
-    dataframe = pd.DataFrame({'recs index':indexes, 'title':titles}) 
+    dataframe = pd.DataFrame({'recs index':indexes, 
+                              'title':titles}) 
     return dataframe   
 
 
-def limit_by_genre(table, genre=None):
-    table.reset_index(inplace=True, drop=True)
+def limit_by_genre(rec_table, genre=None):
+    rec_table.reset_index(inplace=True, drop=True)
     
     if type(genre) == str:
         genre = [genre] # this is because of how streamlit works 
@@ -95,26 +94,26 @@ def limit_by_genre(table, genre=None):
     keep = []
     val = 0
     if genre == None:
-        val = table     
+        val = rec_table     
     elif len(genre) == 1 and genre[0] != 'All':
-        for i in range(len(table['genre'])):
-            if (genre[0] in table['genre'][i]) == True:
+        for i in range(len(rec_table['genre'])):
+            if (genre[0] in rec_table['genre'][i]) == True:
                 keep.append(i)
-        val = table.iloc[keep]
+        val = rec_table.iloc[keep]
     else:
-        for i in range(len(table['title'])):
-            if len(set(genre) & set(table['genre'][i])) == len(set(genre)):
+        for i in range(len(rec_table['title'])):
+            if len(set(genre) & set(rec_table['genre'][i])) == len(set(genre)):
                 keep.append(i)
-        val = table.iloc[keep]
+        val = rec_table.iloc[keep]
         
     return val
 
 
-def include_author(suggestion, table, include):
+def include_author(suggestion, rec_table, include):
     if include == True:
-        val = table
+        val = rec_table
     elif include == False:
-        val = table.loc[table['author'] != suggestion['author']]
+        val = rec_table.loc[rec_table['author'] != suggestion['author']]
     return val
 
 
@@ -135,13 +134,13 @@ def book_rec_engine(user_input, limit_genre=None,
     return user_select, rec_output 
 
 
-def get_index_title(output):
+def get_index_title(rec_table):
     indexes = []
-    for i in output['title']:
+    for i in rec_table['title']:
         indexes.append(book_data.index[book_data['title'] == i])
 
 
-def check_output_na(table):
+def check_output_na(rec_table):
     """"This function will take the updated rec table and determine if the 
     values are blank. If blank, will update the table to fill out NA in all 
     columns"""
@@ -150,10 +149,10 @@ def check_output_na(table):
     error_frame = {'title':'NA','author':'NA','desc':'NA','rating':'NA',
                    'genre':['NA'],'cover link':error_cat_link,
                    'book link':np.nan}
-    if table.empty == True:
+    if rec_table.empty == True:
         val = pd.DataFrame(error_frame, index=[0])
     else:
-        val = table 
+        val = rec_table 
     return val
 
 def unique(sequence):

@@ -4,11 +4,11 @@ import streamlit as st
 
 st.set_page_config(layout="wide", 
                    page_title="My Next Book Is",
-                   page_icon=":blue-book:")
+                   page_icon="./data/blue-book.png") 
 
 book_data = pd.read_pickle("./data/best_books_working_20221229.pkl")
 cosine_sim = np.load('./data/cosine_sim_20221229.npy')
-indices = pd.Series(book_data.index, index=book_data['title']).drop_duplicates()
+indices = pd.Series(book_data.index, index=book_data['title'])
 
 book_data['desc'] = book_data['desc'].str.replace("#", "\n", regex=False)
 
@@ -166,7 +166,6 @@ def list_to_text(items, sep=' ', keep_dup=False):
         return sep.join(items)
    
 
-
 def other_recs(table):
     separator = ' \n\n '
     string = []
@@ -200,6 +199,16 @@ by_author_text = book_data['author'][book_data['title'] == user_input].iloc[0]
 st.sidebar.markdown("by {}".format(by_author_text))
 
 
+# include author
+container = st.sidebar.container()
+author_text = '''Include other books by **{}** in Possible Recommendations?
+'''.format(by_author_text)
+author_bool = container.checkbox(author_text, value=False)
+
+
+st.sidebar.markdown('---')
+
+
 # limit by specific genres
 genre_list = ['Adventure', 'Childrens', 'Classics', 'Dystopia', 'Fantasy',
               'Historical', 'Horror', 'Mystery', 'Paranormal', 'Romance',
@@ -207,6 +216,7 @@ genre_list = ['Adventure', 'Childrens', 'Classics', 'Dystopia', 'Fantasy',
 limit_genre = st.sidebar.multiselect('Only Include the Below Genres?',
                                      genre_list,
                                      default=None)
+
 
 # number of overlap
 num_input_text = '''How Much Required Genre Overlap Between Your Input and 
@@ -217,13 +227,9 @@ num_input = st.sidebar.slider(num_input_text,
                               value=5)
 
 # caption on genre overlap
-st.sidebar.caption('''Warning: genre overlap below 3 or above 7 may result
-result in major inaccuracies''')
+st.sidebar.caption('''Warning: Genre Overlap of less than 3 or more than 7 
+may result in major inaccuracies''')
 
-# include author in recs
-author_text = '''Include other books by *{}* in Possible Recommendations?
-'''.format(by_author_text)
-author_bool = st.sidebar.checkbox(author_text, value=False)
 
 # book engine call
 user_input, rec_df = book_rec_engine(user_input, limit_genre, 
@@ -234,7 +240,7 @@ rec_df.reset_index(inplace=True, drop=True)  # needed for author/title display
 rec_df = check_output_na(rec_df)
 
 # side bar genre for user input 
-st.sidebar.markdown('''#### {} is Listed Under the Following Genres: 
+st.sidebar.markdown('''#### *{}* is Listed Under the Following Genres: 
 '''.format(user_input['title']))
 genre_list_text_user = list_to_text(user_input["genre"],
                                     sep=', ', keep_dup=False)
@@ -246,13 +252,14 @@ col1, col2 = st.columns([3, 1], gap="medium")
 
 # rec display info
 col1.header("Your Top Recommendation:")
-col1.subheader("{} by {}".format(rec_df['title'][0], rec_df['author'][0]))
+col1.subheader("*{}* by {}".format(rec_df['title'][0], rec_df['author'][0]))
 col1.markdown(rec_df["desc"].iloc[0])
 
 # display top rec genres 
 genre_list_text = list_to_text(rec_df["genre"].iloc[0], 
                                sep=', ', keep_dup=False)
-col1.markdown('##### Your Top Recommendation is Under the Following Genres:')
+col1.markdown('##### *{}* is Listed Under the Following Genres:'.format(
+    rec_df['title'][0]))
 col1.markdown(genre_list_text)
 
 # other recs

@@ -166,24 +166,6 @@ def list_to_text(items, sep=' ', keep_dup=False):
         return sep.join(items)
    
 
-
-def other_recs(table):
-    separator = ' \n\n '
-    string = []
-    for i in table.index[1:]:
-        string.append(''.join(['#### ',
-                               table['title'][i],
-                               ' by ',
-                               table['author'][i],
-                               '\n ',
-                               table['desc'][i],
-                               separator
-                               ]))
-
-    string_join = ''.join(string)
-    return string_join
-
-
 ##############################################################################
 # creating the layout
 ##############################################################################
@@ -255,15 +237,9 @@ genre_list_text = list_to_text(rec_df["genre"].iloc[0],
 col1.markdown('##### Your Top Recommendation is Under the Following Genres:')
 col1.markdown(genre_list_text)
 
-# other recs
-col1.markdown("---")
-col1.markdown("##### Other Recommendations:")
-
-
-other_recs_string = other_recs(rec_df)
-expander = col1.expander('**Click to Expand List**')
-expander.markdown(other_recs_string)
-
+# dataframe
+col1.subheader("Other Recommendations:")
+col1.dataframe(rec_df[['title', 'author', 'genre', 'desc']].iloc[1:])
 
 # image display
 col2.image(rec_df["cover link"].iloc[0])
